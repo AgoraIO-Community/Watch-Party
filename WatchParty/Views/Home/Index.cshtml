@@ -1,0 +1,51 @@
+﻿@using WatchParty.Database
+@model WatchParty.Database.Room
+@{
+    ViewData["Title"] = "Set link of stream";
+}
+
+
+@if (Model != null && !string.IsNullOrEmpty(Model.Name))
+{
+    <div id="div_join" class="panel panel-default" style="padding: 20px">
+
+        <form  method="post">
+            <div class="form-group">
+                <input type="hidden" name="name" value="@Model.Name" id="name"/>
+                <label for="url">Link to broadcast</label>
+                <input type="text" class="form-control" id="url" value="@ViewBag.Url" placeholder="http://stream.livesport.ws/stream/150786/?_ga=2.59457709.164129996.1545856499-247224563.1545856499" name="url"/>
+                <p style="font-size: 80%;">How to find a broadcast: <b>Go to livesport.ws</b> → <b>Select a match</b> → <b>Copy “Watch” url and paste it here</b></p>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-lg btn-info">WATCH</button>
+            </div>
+        </form>
+    </div>
+}
+else
+{
+    <div id="div_join" class="panel panel-default" style="padding: 20px">
+
+        <form  method="post">
+            <div class="form-group">
+                <input type="hidden" name="join" value="false" id="join"/>
+                <label for="name">Name of room</label>
+                <input type="text" class="form-control" id="name" value="@ViewBag.Url" placeholder="" name="name"/>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-lg btn-info">CREATE</button>
+                <button type="submit" class="btn btn-lg btn-info" id="joinButton">JOIN</button>
+            </div>
+        </form>
+    </div>
+}
+
+
+<script language="javascript">
+    $(function() {
+        $("#joinButton").click(function () {
+            $("#join").val("true");
+        });
+    });
+
+</script>

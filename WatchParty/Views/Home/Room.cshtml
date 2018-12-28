@@ -1,0 +1,153 @@
+﻿@model WatchParty.Database.Room
+@{
+    ViewData["Title"] = "Room";
+}
+
+<a href="/" class="btn btn-group-lg btn-info">Back</a>
+<div class="panel panel-default" style="padding: 20px">
+    <div>
+        <div id="video" style="margin:0 auto;">
+            <div id="agora_local" style="float:right;width:210px;height:147px;display:inline-block;"></div>
+            <div>
+                @Html.Raw(Model.Iframe)
+            </div>
+            <div id="videoFrends" style="margin:0 auto;">
+            </div>
+        </div>
+        
+
+    </div>
+</div>
+
+
+<script language="javascript">
+
+    if (!AgoraRTC.checkSystemRequirements()) {
+        alert("Your browser does not support WebRTC!");
+    }
+
+    AgoraRTC.Logger.error('this is error');
+    AgoraRTC.Logger.warning('this is warning');
+    AgoraRTC.Logger.info('this is info');
+    AgoraRTC.Logger.debug('this is debug');
+
+    var client, localStream, camera, microphone;
+
+
+    function AgoraJoin() {
+        var channel_key = null;
+        client = AgoraRTC.createClient({ mode: 'interop' });
+        client.init("insert_key_here", function () {
+
+            client.join(channel_key, "@Model.Id", null, function (uid) {
+
+
+                    localStream = AgoraRTC.createStream({ streamID: uid, audio: true, cameraId: camera, video: true, screen: false });
+
+
+                        localStream.setVideoProfile('720p_3');
+
+                    localStream.init(function () {
+                        console.log("getUserMedia successfully");
+                        localStream.play('agora_local');
+
+                        client.publish(localStream, function (err) {
+                            console.log("Publish local stream error: " + err);
+                        });
+
+                        client.on('stream-published', function (evt) {
+                            console.log("Publish local stream successfully");
+                        });
+                    }, function (err) {
+                        console.log("getUserMedia failed", err);
+                    });
+
+            }, function (err) {
+                console.log("Join channel failed", err);
+            });
+        }, function (err) {
+            console.log("AgoraRTC client init failed", err);
+        });
+
+        channelKey = "";
+        client.on('error', function (err) {
+            console.log("Got error msg:", err.reason);
+            if (err.reason === 'DYNAMIC_KEY_TIMEOUT') {
+                client.renewChannelKey(channelKey, function () {
+                    console.log("Renew channel key successfully");
+                }, function (err) {
+                    console.log("Renew channel key failed: ", err);
+                });
+            }
+        });
+
+
+        client.on('stream-added', function (evt) {
+            var stream = evt.stream;
+            client.subscribe(stream, function (err) {
+                console.log("Subscribe stream failed", err);
+            });
+        });
+
+        client.on('stream-subscribed', function (evt) {
+            var stream = evt.stream;
+            if ($('div#video #agora_remote' + stream.getId()).length === 0) {
+                $('div#videoFrends').append('<div id="agora_remote' + stream.getId() + '" style="float:left; width:310px;height:207px;display:inline-block;"></div>');
+            }
+            stream.play('agora_remote' + stream.getId());
+        });
+
+        client.on('stream-removed', function (evt) {
+            var stream = evt.stream;
+            stream.stop();
+            $('#agora_remote' + stream.getId()).remove();
+            console.log("Remote stream is removed " + stream.getId());
+        });
+
+        client.on('peer-leave', function (evt) {
+            var stream = evt.stream;
+            if (stream) {
+                stream.stop();
+                $('#agora_remote' + stream.getId()).remove();
+
+            }
+        });
+    }
+
+    function leave() {
+        document.getElementById("leave").disabled = true;
+        client.leave(function () {
+
+        }, function (err) {
+            console.log("Leave channel failed");
+        });
+    }
+
+    function publish() {
+        document.getElementById("publish").disabled = true;
+        document.getElementById("unpublish").disabled = false;
+        client.publish(localStream, function (err) {
+            console.log("Publish local stream error: " + err);
+        });
+    }
+
+    function unpublish() {
+        document.getElementById("publish").disabled = false;
+        document.getElementById("unpublish").disabled = true;
+        client.unpublish(localStream, function (err) {
+            console.log("Unpublish local stream failed" + err);
+        });
+    }
+
+    $(function() {
+        AgoraJoin();
+    });
+
+</script>
+
+
+
+
+
+
+
